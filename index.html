@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ミニ不思議ダンジョン</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<div id="v-menu"><button id="setbtn" type="button" aria-label="設定"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button><div id="setov" hidden><div class="sbox"><div class="st">設定</div><div class="sl">アイテム欄とキーパッドの位置</div><div class="pv" id="setpv"><i>アイテム欄</i><i>パッド</i></div><div class="sg"><button type="button" data-sw="0">パッド右</button><button type="button" data-sw="1">パッド左</button></div><div class="sl" style="margin-top:14px">BGMの音量</div><input type="range" id="vb" min="0" max="100" step="5"><div class="sl" style="margin-top:10px">効果音の音量</div><input type="range" id="vs" min="0" max="100" step="5"><button type="button" class="sc" id="setclose">閉じる</button></div></div><button class="mutebtn" id="mute2" aria-label="音を消す"></button><h2 class="sr">ミニ不思議ダンジョン</h2><div id="menubox"></div></div>
+<div id="story" hidden><button class="st-skip" type="button">スキップ</button><div class="st-title">一章「山里に訪れた異変」</div><img class="st-hero" id="sthero" alt=""><div class="st-box" id="stbox"></div></div>
+<div id="v-game">
+<div id="hud"></div><div id="stage"><canvas id="c"></canvas>
+<div id="log"></div><button id="mapbtn" type="button" aria-label="マップ"><canvas id="minic"></canvas></button><div id="sfx"></div><div id="ftitle"><div class="ft-in"></div></div><div id="stairq" hidden><div class="sq-box"><div class="sq-t">階段を見つけた。<br>降りますか？</div><div class="sq-b"><button id="stairYes" type="button">降りる</button><button id="stairNo" type="button">降りない</button></div></div></div><div id="lvq" hidden><div class="sq-box"><div class="sq-t">隠された祠から九尾の気配がする…。<br>挑戦するレベルを選んでください。</div><div class="sq-g"><button type="button" data-lv="1">Lv 1</button><button type="button" data-lv="10">Lv 10</button><button type="button" data-lv="15">Lv 15</button><button type="button" data-lv="20">Lv 20</button></div><button type="button" id="lvNo" class="sq-c">やめる</button></div></div><div id="mapov" hidden><canvas id="mapc"></canvas></div></div>
+<div id="ctrl"><div id="bagbox"><div id="baglabel"></div><div id="bag"></div><div id="menubar"><button id="allybtn"><i data-ic="pt"></i>仲間</button><button data-v="fuse"><i data-ic="fuse"></i>配合</button><button data-v="dex"><i data-ic="dex"></i>図鑑</button><button class="mutebtn" data-lbl="1" aria-label="音を消す"></button></div></div><div id="pad"></div></div>
+<div id="itemact"></div>
+<div id="allypanel" hidden></div>
+<button id="again">もう一度挑戦する</button>
+</div>
+<div id="v-roster" hidden><button class="back">← 戻る</button><h2 id="rostersum">仲間一覧</h2><button id="tofuse" class="fusego"></button><div id="rosterlist"></div></div>
+<div id="v-fuse" hidden><button class="back">← 戻る</button><h2>配合</h2><div id="fusebox"></div></div>
+<div id="v-dex" hidden><button class="back">← 戻る</button><h2 id="dexsum">図鑑</h2><div id="dexlist"></div></div>
+</main>
+<script src="game.js"></script>
+</body>
+</html>
