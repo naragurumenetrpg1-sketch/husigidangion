@@ -845,14 +845,16 @@ function renderMenu(){
     DUNGEONS.forEach(d=>{
       const ok=d.n===1||CLEAR>=d.n-1,b=document.createElement('button');b.className='mbtn sel'+(d.n===1?' primary':'');
       b.innerHTML=`<span class="ic">${ok?uic('dun',d.n===1?30:26):'🔒'}</span>ステージ${d.n}${ok?'':'　未解放'}`;
-      if(ok)b.onclick=()=>{const go=()=>{menuSel=false;start(BAG.slice(),d.n);BAG=[];show('game')};const ck={1:'pro',2:'ch2',3:'ch3',4:'ch4',5:'ch5'}[d.n],kk={pro:'yokaiPrologue',ch2:'yokaiCh2',ch3:'yokaiCh3',ch4:'yokaiCh4',ch5:'yokaiCh5'}[ck];if(ck&&!memSeen(kk))playStory(go,ck);else go()};else{b.disabled=true;b.style.opacity='.55'}
+      if(ok)b.onclick=()=>guardRun(()=>{const go=()=>{menuSel=false;start(BAG.slice(),d.n);BAG=[];show('game')};const ck={1:'pro',2:'ch2',3:'ch3',4:'ch4',5:'ch5'}[d.n],kk={pro:'yokaiPrologue',ch2:'yokaiCh2',ch3:'yokaiCh3',ch4:'yokaiCh4',ch5:'yokaiCh5'}[ck];if(ck&&!memSeen(kk))playStory(go,ck);else go()});else{b.disabled=true;b.style.opacity='.55'}
       box.appendChild(b);
     });
     const bk=document.createElement('button');bk.className='mbtn';bk.innerHTML='<span class="ic"></span>戻る';bk.onclick=()=>{menuSel=false;renderMenu()};box.appendChild(bk);
     return;
   }
+  const run=peekRun();
   const list=[
-    ['<dun>','ダンジョンに潜る',()=>{menuSel=true;renderMenu()},true],
+    ...(run?[['▶','<span class="cont">つづきから<small>'+runLabel(run)+'</small></span>',()=>{if(!loadRun())renderMenu()},true]]:[]),
+    ['<dun>','ダンジョンに潜る',()=>{menuSel=true;renderMenu()},!run],
     ['<fuse>','倉庫',()=>{goHome(BAG,'storage');show('game')}],
     ['<dex>','妖怪図鑑',()=>{goHome(BAG,'dex');show('game')}],
     ['<pt>','仲間一覧',()=>show('roster')],
@@ -971,6 +973,7 @@ function backToMenu(){
   show('menu');
 }
 function start(bag=[],dun=1){
+  clearRun();
   S={dun,maxF:DUNGEONS[dun-1].floors,floor:1,turn:0,over:false,allies:ROSTER.filter(r=>r.go).slice(0,3).map(r=>({...r,hp:r.max,x:0,y:0})),log:['ダンジョンに足を踏み入れた。'],
      p:{x:0,y:0,hp:30,max:30,lv:1,exp:0,food:100,bag:bag.slice()}};
   Object.assign(S,newFloor(1,S.p));placeAllies();
@@ -1009,7 +1012,7 @@ const seeMon=o=>seeing(o.x,o.y)||(S.allies.some(a=>a.n==='一つ目小僧')&&Mat
 function descend(){
   const p=S.p;
         if(S.floor>=S.maxF){
-          S.over=true;sfx('clear');say(S.boss?`九尾の狐を倒した！ステージ${S.dun}クリア！`:`最深部の階段を降りた！ステージ${S.dun}クリア！`);
+          S.over=true;clearRun();sfx('clear');say(S.boss?`九尾の狐を倒した！ステージ${S.dun}クリア！`:`最深部の階段を降りた！ステージ${S.dun}クリア！`);
           if(S.dun>CLEAR){CLEAR=S.dun;try{localStorage.setItem('yokaiClear',String(CLEAR))}catch(e){}if(S.dun===1)say('配合システムが解放された！');if(S.dun<DUNGEONS.length)say(`ステージ${S.dun+1}が解放された！`);else say('すべてのステージをクリアした！')}
           say(`Lv${p.lv}・仲間${S.allies.length}匹・${S.turn}ターン`);
           if(S.pending&&S.pending.length)say('新しく仲間にした妖怪は、メニューに戻ると図鑑に登録される。');
@@ -1038,7 +1041,7 @@ function startBossRematch(lv){
   S.log=[`祠の奥で、九尾の狐が待ち構えている！（Lv${lv}）`];sfx('boss');render();floorTitle('boss');
 }
 (function(){const lq=document.getElementById('lvq');
-  lq.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{lq.hidden=true;const lv=+b.dataset.lv;playStory(()=>{S.ask=false;startBossRematch(lv)},'shrine')});
+  lq.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{lq.hidden=true;const lv=+b.dataset.lv;guardRun(()=>playStory(()=>{S.ask=false;startBossRematch(lv)},'shrine'),()=>{S.ask=false;render()})});
   document.getElementById('lvNo').onclick=()=>{lq.hidden=true;S.ask=false;render()};
 })();
 (function(){const q=document.getElementById('stairq');
@@ -1180,7 +1183,7 @@ function useItem(i){
   if(k==='staff'){
     p.bag.splice(i,1);S.over=true;S.escaped=true;
     if(S.home){S.over=false;S.escaped=false;p.bag.splice(i,0,k);say('ここでは使えない。ダンジョンの中で使おう。');render();return}
-    sfx('staff');say('道標の杖を掲げた！光に導かれて、ダンジョンを脱出した。持ち物は無事だ。');
+    clearRun();sfx('staff');say('道標の杖を掲げた！光に導かれて、ダンジョンを脱出した。持ち物は無事だ。');
     if(S.pending&&S.pending.length)say('新しく仲間にした妖怪は、メニューに戻ると図鑑に登録される。');
     const ag=document.getElementById('again');ag.textContent='メニューに戻る（持ち物を持ち帰る）';ag.style.display='block';render();return;
   }
@@ -1307,13 +1310,13 @@ function endTurn2b(){
     while(o.acc>=1&&S.mon.includes(o)&&p.hp>0){o.acc--;if(o.freeze>0){o.freeze--;continue}if(o.conf>0){o.conf--;wander(o);continue}monAct(o)}
   }
   tick();
-  p.fc=(p.fc||0)+0.7;if(p.fc>=1){p.fc-=1;p.food=Math.max(0,p.food-1);if(p.food===20)say('お腹が空いてきた…')}
+  p.fc=(p.fc||0)+1;if(p.fc>=3){p.fc-=3;p.food=Math.max(0,p.food-1);if(p.food===20)say('お腹が空いてきた…')}
 
   if(p.food===0)p.hp--;
   else if(S.turn%4===0&&p.hp<p.max)p.hp++;
   if(S.turn%4===0)S.allies.forEach(a=>{if(a.hp<a.max)a.hp++});
   if(p.hp<=0&&eqOn('charm')){const ci=p.bag.indexOf('charm');p.bag.splice(ci,1);if(!p.bag.includes('charm'))p.eq.charm=false;p.hp=p.max;sfx('revive');p.food=Math.max(p.food,20);p.bleed=0;p.freeze=0;p.conf=0;say('復活の護符が光った！HPが全快した！護符は砕け散った。')}
-  if(p.hp<=0){S.over=true;sfx('die');p.hp=0;say(`力尽きた… ${S.floor}階で倒れた。`);const ag=document.getElementById('again');ag.textContent='メニューに戻る（持ち物は失われる）';ag.style.display='block'}
+  if(p.hp<=0){S.over=true;clearRun();sfx('die');p.hp=0;say(`力尽きた… ${S.floor}階で倒れた。`);const ag=document.getElementById('again');ag.textContent='メニューに戻る（持ち物は失われる）';ag.style.display='block'}
   render();
 }
 
@@ -1586,5 +1589,97 @@ addEventListener('blur',stopHold);
 document.getElementById('again').onclick=backToMenu;
 const KEYS={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0],y:[-1,-1],u:[1,-1],b:[-1,1],n:[1,1],' ':[0,0],'.':[0,0]};
 addEventListener('keydown',e=>{const k=KEYS[e.key];if(k&&!document.getElementById('v-game').hidden){e.preventDefault();act(k[0],k[1],false,e.repeat)}});
+
+/* ===== 中断セーブ（ダンジョン攻略の途中経過を自動保存） =====
+   ・1秒ごと／アプリを閉じる・裏に回る時に自動保存。死亡・クリア・脱出で自動削除。
+   ・保存形式は {v:バージョン, t:保存時刻, S:状態}。仕様を変えたら RUN_VER を上げる。 */
+const RUN_KEY='yokaiRun',RUN_VER=1;
+let runSig='',RESETTING=false;
+const RUN_SKIP=k=>k[0]==='_'||k==='busy'||k==='fx'||k==='ask'||k==='lock'||k==='hitT';
+const inRunNow=()=>!!S&&!S.home&&!S.over;
+function validRun(s){
+  return !!s&&typeof s==='object'&&!s.home&&!s.over&&!!s.p&&Array.isArray(s.m)&&s.m.length===H&&Array.isArray(s.m[0])&&s.m[0].length===W
+    &&Array.isArray(s.mon)&&Array.isArray(s.items)&&Array.isArray(s.allies)&&!!s.stairs&&Array.isArray(s.p.bag)
+    &&Number.isFinite(s.p.x)&&Number.isFinite(s.p.y)&&Number.isFinite(s.p.hp)&&Number.isFinite(s.p.max)
+    &&Number.isInteger(s.dun)&&s.dun>=1&&s.dun<=DUNGEONS.length&&Number.isInteger(s.floor)&&s.floor>=1&&s.floor<=DUNGEONS[s.dun-1].floors;
+}
+function saveRun(force){
+  if(RESETTING||!inRunNow())return false;
+  const sig=[S.dun,S.floor,S.turn,S.p.hp,S.p.food,S.p.lv,S.p.bag.join(),S.allies.length,S.mon.length].join('|');
+  if(!force&&sig===runSig)return true;
+  try{localStorage.setItem(RUN_KEY,JSON.stringify({v:RUN_VER,t:Date.now(),S},(k,v)=>RUN_SKIP(k)?undefined:v));runSig=sig;return true}
+  catch(e){return false}
+}
+function clearRun(){try{localStorage.removeItem(RUN_KEY)}catch(e){}runSig=''}
+function peekRun(){
+  let raw=null;try{raw=localStorage.getItem(RUN_KEY)}catch(e){return null}
+  if(!raw)return null;
+  try{const o=JSON.parse(raw);return(o&&o.v===RUN_VER&&validRun(o.S))?o:null}
+  catch(e){clearRun();return null}   // 壊れたデータは捨てる
+}
+const runLabel=o=>`ステージ${o.S.dun}・${o.S.boss?'ボス部屋':o.S.floor+'F'}・Lv${o.S.p.lv}`;
+function loadRun(){
+  const o=peekRun();if(!o)return false;
+  S=o.S;S.fx=[];S.busy=false;S.ask=false;S.lock=false;
+  document.getElementById('stairq').hidden=true;document.getElementById('lvq').hidden=true;
+  document.getElementById('again').style.display='none';
+  allyOpen=false;runSig='';
+  S.log=['冒険を再開した。'];
+  show('game');
+  if(S.p.snare>0)autoSnare();
+  syncScene();
+  return true;
+}
+/* 確認ダイアログ */
+function confirmDlg(msg,yes,yl,nl,no){
+  stopHold();
+  const o=document.getElementById('cfm'),y=document.getElementById('cfmYes'),n=document.getElementById('cfmNo');
+  document.getElementById('cfmt').innerHTML=msg;y.textContent=yl||'OK';n.textContent=nl||'やめる';
+  const close=()=>{o.hidden=true;y.onclick=n.onclick=null};
+  y.onclick=()=>{close();if(yes)yes()};n.onclick=()=>{close();if(no)no()};o.hidden=false;
+}
+/* 途中データがあるときに「新しく始める」前に確認する */
+function guardRun(go,cancel){
+  if(peekRun())confirmDlg('冒険の途中データがあります。<br>新しく始めると、その続きは遊べなくなります。',()=>go(),'新しく始める','やめる',cancel);
+  else go();
+}
+/* マップ左上のメニューボタン：冒険中なら保存して中断、倉庫なら戻るだけ */
+document.getElementById('menubtn').onclick=()=>{
+  stopHold();
+  if(!S)return;
+  if(S.home){show('menu');return}
+  if(S.over){backToMenu();return}
+  confirmDlg('冒険を中断してメニューに戻りますか？<br><small>ここまでの状態は自動で保存され、<br>「つづきから」で再開できます。</small>',()=>{
+    if(saveRun(true))show('menu');
+    else confirmDlg('保存できませんでした。<br><small>ブラウザの保存機能が無効かもしれません。<br>このまま戻ると続きから遊べません。</small>',()=>show('menu'),'それでも戻る','やめる');
+  },'中断する','続ける');
+};
+/* 自動保存 */
+setInterval(()=>{try{
+  if(!S||S.home)return;
+  if(S.over){clearRun();return}
+  if(!S.busy&&!S.ask)saveRun();
+}catch(e){}},1000);
+['pagehide','visibilitychange'].forEach(ev=>addEventListener(ev,()=>{try{if(ev==='pagehide'||document.hidden)saveRun(true)}catch(e){}}));
+/* 設定画面：全データ初期化 */
+(function(){const b=document.getElementById('setreset');if(!b)return;
+  b.onclick=()=>confirmDlg('すべてのセーブデータ<br><small>（進行状況・仲間・図鑑・倉庫・冒険の途中データ）</small><br>を消します。元に戻せません。',()=>{
+    RESETTING=true;   // 閉じる時の自動保存で復活させない
+    try{Object.keys(localStorage).filter(k=>k.indexOf('yokai')===0).forEach(k=>localStorage.removeItem(k))}catch(e){}
+    location.reload();
+  },'消す','やめる');
+})();
+
+/* ===== スマホ専用まわり ===== */
+addEventListener('gesturestart',e=>e.preventDefault());            // iOSのピンチ拡大を止める
+addEventListener('contextmenu',e=>e.preventDefault());             // 長押しメニューを出さない
+document.addEventListener('pointerdown',function f(){document.removeEventListener('pointerdown',f);
+  try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('portrait').catch(()=>{})}catch(e){}},{once:true});
+(function(){const u=document.getElementById('gateurl'),c=document.getElementById('gatecopy');if(!u)return;
+  const url=location.origin==='null'||location.protocol==='file:'?location.href.split('?')[0]:location.origin+location.pathname;
+  u.textContent=url;
+  if(c)c.onclick=()=>{try{navigator.clipboard.writeText(url).then(()=>{c.textContent='コピーしました'})}catch(e){}};
+})();
+
 goHome(BAG);renderDex();renderRoster();show('menu');
 if(!introPlayed())playStory(null,'intro');
